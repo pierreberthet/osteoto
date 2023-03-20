@@ -23,6 +23,31 @@ import time
 from datetime import datetime
 
 #%%
+# FUNCTIONS
+
+def extract_time(text:str):
+    return text[text.find('(')+2 : text.find(':')+3], pd.to_datetime(text[text.find('(')+2 : text.find(',')])
+
+
+
+#%%
+# PARAMETERS
+
+before = pd.to_datetime('2023/05/06')
+after = pd.to_datetime('2023/05/20')
+
+save_dir = '/media/terror/code/projects/osteoto/'
+dump = 'notified.txt'
+os.chdir(save_dir)
+
+previous_dump = False
+if os.path.exists(dump):
+    previous_dump = True
+    with open(dump, "r") as file:
+        contents = file.read()
+        already_notified = contents.split("\n")
+
+#%%
 def run():
     
     #%%
@@ -43,70 +68,61 @@ def run():
     time.sleep(1)
     soup = BeautifulSoup(driver.page_source, 'html5lib')
     
-    # FIRST
+    found = False
+    found_slots = []
+    # check first available
     ddispo_first = soup.find_all('a', class_='heure_dispo')
-    
-    
-    # NEXT
-    button = driver.find_element(by='xpath', value='//*[@id="a_suiv"]').click()
-    time.sleep(.5)
-    soup = BeautifulSoup(driver.page_source, 'html5lib')
-    ddispo_next = soup.find_all('a', class_='heure_dispo')
-    # click button
-    # driver.execute_script("arguments[0].click();", button)
+    for slot in ddispo_first:
+        t_time, d_time = extract_time(slot.attrs['onclick'])
+        if d_time < after:
+            if d_time > before:
+                if previous_dump:
+                    if t_time not in already_notified:
+                        found = True
+                        found_slots.append(t_time)
+                else:
+                    found = True
+                    found_slots.append(t_time)
+                
+    if not found:    
+        # try the next available week
+        driver.find_element(by='xpath', value='//*[@id="a_suiv"]').click()
+        time.sleep(.5)
+        soup = BeautifulSoup(driver.page_source, 'html5lib')
+        ddispo_next = soup.find_all('a', class_='heure_dispo')
+        for slot in ddispo_next:
+            t_time, d_time = extract_time(slot.attrs['onclick'])
+            if d_time < after:
+                if d_time > before:
+                    if previous_dump:
+                        if t_time not in already_notified:
+                            found = True
+                            # send notif email
+                            found_slots.append(t_time)
+                    else: 
+                        found = True
+                        found_slots.append(t_time)
 
-    
     driver.close()
-    #%%
     
-    # Find all job listings on the page
-    # ddispo = soup.find_all('td', class_='ddispos')
+    if found:
+        #send email with list of times
+        if os.path.exists(dump):
+            found_slots = already_notified + found_slots
+        with open(dump, "w") as file:
+            file.writelines("\n".join(found_slots))
 
-    
-    
-    # get current job offers
-    current = dict()
-    for job in job_listings:
-        current[job['href']] = {'title': job.find('div', class_='JobList_titleColumn__3oZrC').text, 
-                            'business': job.find('div', class_='JobList_secondaryColumnSm__Ac1BT').text,
-                            'location': [loc.text for loc in job.find('div', class_='JobList_locationsColumn__xrHQC')],
-                            'date': datetime.now().strftime('%d/%m/%Y')}
-     
-    current = pd.DataFrame.from_dict(current, orient='index')
-    current['date'] = pd.to_datetime(current.date, format="%d/%m/%Y")
-    
-    found_new = False
-    # Read the old job listings from a file, if it exists
-    if os.path.exists(previous_jobs):
-        previous = pd.read_csv(previous_jobs, index_col=0)
-        # first print the ones not listed anymore
-        for pi in previous.index:
-            if pi not in current.index:
-                print(f"REMOVED: {previous.loc[pi, 'title']}      ---    {pi}\n")
-        # then print the new ones
-        for ci in current.index:
-            if ci not in previous.index:
-                found_new = True
-                print(f"!!! NEW !!!:    {current.loc[ci,'title']}   ---   {current.loc[ci,'business']}\
-        \n{current.loc[ci,'location']}\n{current.loc[ci,'date']}\
-        \n{ci}\n")
-        if not found_new:
-            print('no new jobs listed')
-        
-    else: 
-        for ci in current.index:
-            print(f"!!! NEW !!!:    {current.loc[ci,'title']}   ---   {current.loc[ci,'business']}\
-    \n{current.loc[ci,'location']}\n{current.loc[ci,'date']}\
-    \n{ci}\n")
-    
-    # now we save the current as previous
-    current.to_csv(previous_jobs)
-    
+        print(f"FOUND SLOTS:\n    {found_slots}")
+    else:
+        print('nothing available')
     print(f"Checked at {datetime.now().strftime('%H:%M:%S %d/%m/%Y')}")
-    return
+    
+    #%%
+
 
 
 #%%
 # TODO (dev)
 # add cron job
-# send email with links when new jobs
+# send email with links when new slots
+# optimize so that 1 run bundles all the available time, and send 1 email, not 1 email for each available time
