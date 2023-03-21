@@ -40,16 +40,16 @@ save_dir = '/media/terror/code/projects/osteoto/'
 dump = 'notified.txt'
 os.chdir(save_dir)
 
-previous_dump = False
-if os.path.exists(dump):
-    previous_dump = True
-    with open(dump, "r") as file:
-        contents = file.read()
-        already_notified = contents.split("\n")
-
 #%%
 def run():
     
+    previous_dump = False
+    if os.path.exists(dump):
+        previous_dump = True
+        with open(dump, "r") as file:
+            contents = file.read()
+            already_notified = contents.split("\n")
+
     #%%
     url = "https://www.ubiclic.com/osteopathie/gresy-sur-aix/paulin-vincent-osteopathe"
     
