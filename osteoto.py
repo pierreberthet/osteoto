@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.support.ui import Select
 
-
+import subprocess as s
 
 import time
 from datetime import datetime
@@ -33,8 +33,8 @@ def extract_time(text:str):
 #%%
 # PARAMETERS
 
-before = pd.to_datetime('2023/05/06')
-after = pd.to_datetime('2023/05/20')
+before = pd.to_datetime('2023/04/06')
+after = pd.to_datetime('2023/04/13')
 
 save_dir = '/media/terror/code/projects/osteoto/'
 dump = 'notified.txt'
@@ -111,6 +111,8 @@ def run():
             found_slots = already_notified + found_slots
         with open(dump, "w") as file:
             file.writelines("\n".join(found_slots))
+        
+        s.call(['notify-send', 'Available time!!!', 'osteo'])
 
         print(f"FOUND SLOTS:\n    {found_slots}")
     else:
