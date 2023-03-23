@@ -70,8 +70,12 @@ def run():
 
     driver.get(url)
     time.sleep(1)
-    
-    select = Select(driver.find_element('id', 'owebagdispoprelmotif'))
+    try:
+        select = Select(driver.find_element('id', 'owebagdispoprelmotif'))
+    except NoSuchElementException:
+        driver.get(url)
+        time.sleep(5)
+        select = Select(driver.find_element('id', 'owebagdispoprelmotif'))
 
     select.select_by_visible_text('Consultation M. Paulin Vincent')
     time.sleep(1)
