@@ -22,6 +22,10 @@ import subprocess as s
 import time
 from datetime import datetime
 
+import smtplib
+from email.message import EmailMessage
+
+
 #%%
 # FUNCTIONS
 
@@ -40,6 +44,11 @@ save_dir = '/media/terror/code/projects/osteoto/'
 dump = 'notified.txt'
 os.chdir(save_dir)
 
+passwd = os.getenv('DSRT_PWD')
+email_from = os.getenv('DSRT_EMAIL')
+email_to = os.getenv('NOTIF_EMAIL')
+
+
 #%%
 def run():
     
@@ -50,7 +59,7 @@ def run():
             contents = file.read()
             already_notified = contents.split("\n")
 
-    #%%
+    
     url = "https://www.ubiclic.com/osteopathie/gresy-sur-aix/paulin-vincent-osteopathe"
     
     
@@ -113,6 +122,20 @@ def run():
             file.writelines("\n".join(found_slots))
         
         s.call(['notify-send', 'Available time!!!', 'osteo'])
+        # Set up the message
+        msg = EmailMessage()
+        msg['Subject'] = 'Available time for Paulin'
+        msg['From'] = email_from
+        msg['To'] = email_to
+        msg.set_content(f'Found something!\n    {found_slots}')
+
+        # Connect to the Disroot SMTP server using TLS
+        with smtplib.SMTP_SSL('disroot.org', 465) as smtp:
+            smtp.login(email_from, passwd)
+            smtp.send_message(msg)
+
+
+
 
         print(f"FOUND SLOTS:\n    {found_slots}")
     else:
