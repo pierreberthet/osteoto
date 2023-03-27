@@ -16,6 +16,7 @@ import sys
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.support.ui import Select
+from selenium.common.exceptions import NoSuchElementException
 
 import subprocess as s
 
@@ -73,8 +74,17 @@ def run():
     try:
         select = Select(driver.find_element('id', 'owebagdispoprelmotif'))
     except NoSuchElementException:
+        # there is a better way, wiht inbuilt waitfor function
+        # from selenium.webdriver.common.by import By
+        # from selenium.webdriver.support.ui import WebDriverWait
+        # from selenium.webdriver.support import expected_conditions as EC
+        
+        # WebDriverWait(driver,5).until(EC.visibility_of_element_located((By.CSS_SELECTOR,'[name=firstF]')))
+        # driver.switch_to.frame(driver.find_element_by_css_selector('[name=firstF]'))
+        # WebDriverWait(driver,5).until(EC.visibility_of_element_located((By.ID,'id'))).send_keys('abc')
+        
         driver.get(url)
-        time.sleep(5)
+        time.sleep(8)
         select = Select(driver.find_element('id', 'owebagdispoprelmotif'))
 
     select.select_by_visible_text('Consultation M. Paulin Vincent')
