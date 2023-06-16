@@ -38,8 +38,8 @@ def extract_time(text:str):
 #%%
 # PARAMETERS
 
-before = pd.to_datetime('2023/04/06')
-after = pd.to_datetime('2023/04/13')
+before = pd.to_datetime('2023/08/15')   # latest
+after = pd.to_datetime('2023/07/06')    # earliest
 
 save_dir = '/media/terror/code/projects/osteoto/'
 dump = 'notified.txt'
@@ -49,10 +49,12 @@ passwd = os.getenv('DSRT_PWD')
 email_from = os.getenv('DSRT_EMAIL')
 email_to = os.getenv('NOTIF_EMAIL')
 
+version = 'alpha 002'
+
 
 #%%
 def run():
-    
+    print(version)
     previous_dump = False
     if os.path.exists(dump):
         previous_dump = True
@@ -97,8 +99,8 @@ def run():
     ddispo_first = soup.find_all('a', class_='heure_dispo')
     for slot in ddispo_first:
         t_time, d_time = extract_time(slot.attrs['onclick'])
-        if d_time < after:
-            if d_time > before:
+        if d_time < before:
+            if d_time > after:
                 if previous_dump:
                     if t_time not in already_notified:
                         found = True
@@ -115,8 +117,8 @@ def run():
         ddispo_next = soup.find_all('a', class_='heure_dispo')
         for slot in ddispo_next:
             t_time, d_time = extract_time(slot.attrs['onclick'])
-            if d_time < after:
-                if d_time > before:
+            if d_time < before:
+                if d_time > after:
                     if previous_dump:
                         if t_time not in already_notified:
                             found = True
@@ -153,8 +155,9 @@ def run():
 
         print(f"FOUND SLOTS:\n    {found_slots}")
     else:
-        print('nothing available')
+        print(f'nothing available between {after} and {before}')
     print(f"Checked at {datetime.now().strftime('%H:%M:%S %d/%m/%Y')}")
+
     
     #%%
 
